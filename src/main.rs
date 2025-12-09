@@ -4,22 +4,43 @@ use ansi_term;
 
 struct Session {
 	mines: Box<[u8]>,
-	board: Vec<u8>,
+	board: Box<[u8]>,
+    size: u16,
+    size_bytes: u16,
 	size_x: u16,
 	size_y: u16
 }
 
 impl Session {
+    fn new(size_x: u16, size_y: u16) -> Self {
+        let mut randgen = rand::rng();
+        
+        let size = size_x*size_y;
+        let size_bytes = (size+8-1)/8;
+        let mut mines = (vec![0; size_bytes as usize]).into_boxed_slice();
+        let board = (vec![0; size as usize]).into_boxed_slice();
+
+        for _ in 0..20 {
+            let idx_byte = randgen.random_range(0..mines.len());
+            let idx_mask = 1 << randgen.random_range(0..8);
+            let state = mines[idx_byte];
+            mines[idx_byte] = state | idx_mask;
+        }
+
+        return Self {
+            mines: mines,
+            board: board,
+            size: size,
+            size_bytes: size_bytes,
+            size_x: size_x,
+            size_y: size_y
+        };
+    }
+
 	fn coordinate_to_idx(&mut self, x: u16, y: u16) -> usize {
 		return (x + y * self.size_x) as usize;
 	}
-}
-
-fn new_session(size_x: u16, size_y: u16) -> Session {
-	return Session {
-		size_x: size_x,
-		size_y: size_y
-	};
+    
 }
 
 fn clear() {
@@ -102,15 +123,10 @@ fn main() {
 	let size_x: u16 = prompt_u8("Cols:") as u16;
 	let size_y: u16 = prompt_u8("Rows:") as u16;
 
-	let mut session = new_session();
-
-	// let size_x: u8 = 4;
+    // let size_x: u8 = 4;
 	// let size_y: u8 = 4;
 
-	let size: u16 = size_x*size_y;
-	let size_bytes: u16 = (size+8-1)/8;
-
-	let mut mines: Vec<u8> = vec![0; size_bytes as usize];
+	let mut session = Session::new(size_x, size_y);
 
 	// place 20 mines
 	for _ in 0..20 {
