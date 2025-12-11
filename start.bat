@@ -1,0 +1,1 @@
+cmd /c .\target\debug\ckt-format.exe
